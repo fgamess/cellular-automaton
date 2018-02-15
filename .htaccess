@@ -1,0 +1,5 @@
+Options +FollowSymLinks
+RewriteEngine On
+RewriteRule ^api/(.*)$ /src/Api/api.php?request=$1
+RewriteRule ^index.php(.*)$ /public/index.php
+RewriteRule ^automaton.php(.*)$ /public/automaton.php

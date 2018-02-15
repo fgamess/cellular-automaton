@@ -1,0 +1,16 @@
+language: php
+php:
+  - '7.2'
+sudo: required
+services:
+  - docker
+env:
+  - DOCKER_COMPOSE_VERSION=3.2
+before_install:
+  - docker-compose up -d
+
+install:
+  - docker exec -it file_consumer_php composer install
+
+script:
+  - docker exec -it file_consumer_php /vendor/bin/phpunit tests/
