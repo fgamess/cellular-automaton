@@ -13,4 +13,4 @@ install:
   - docker exec -it cellular_automaton_php composer install
 
 script:
-  - docker exec -it cellular_automaton_php /vendor/bin/phpunit tests/
+  - docker exec -it cellular_automaton_php vendor/bin/phpunit tests/
