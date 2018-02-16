@@ -1,3 +1,5 @@
 vendor
 
 .idea
+.bash_history
+.php_history
