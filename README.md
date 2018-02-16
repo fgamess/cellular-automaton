@@ -4,15 +4,15 @@
 Multiple cellular automatons (Conway's Game of Life) written in PHP and displayed with html/javascript (ES6)
 
 ## Table of contents
-- [Prerequisites](https://github.com/FGamess/file-consumer-command#prerequisites)
-  - [Tools required](https://github.com/FGamess/file-consumer-command#tools-required)
-  - [Set up the docker stack](https://github.com/FGamess/file-consumer-command#set-up-the-docker-stack)
-  - [Setting www-data as owner of the files](https://github.com/FGamess/file-consumer-command#setting-www-data-as-owner-of-the-files)
-  - [Install the vendors](https://github.com/FGamess/file-consumer-command#install-the-vendors)
-- [How to use](https://github.com/FGamess/file-consumer-command#how-to-use)
-  - [Going to the index page](https://github.com/FGamess/file-consumer-command#going-to-index-page)
-- [Testing](https://github.com/FGamess/file-consumer-command#testing)
-  - [Run the tests](https://github.com/FGamess/file-consumer-command#run-the-tests)
+- [Prerequisites](https://github.com/fgamess/cellular-automatond#prerequisites)
+  - [Tools required](https://github.com/fgamess/file-consumer-command#tools-required)
+  - [Set up the docker stack](https://github.com/fgamess/cellular-automaton#set-up-the-docker-stack)
+  - [Setting www-data as owner of the files](https://github.com/fgamess/cellular-automaton#setting-www-data-as-owner-of-the-files)
+  - [Install the vendors](https://github.com/fgamess/cellular-automaton#install-the-vendors)
+- [How to use](https://github.com/fgamess/cellular-automaton#how-to-use)
+  - [Going to the index page](https://github.com/fgamess/cellular-automaton#going-to-index-page)
+- [Testing](https://github.com/fgamess/cellular-automaton#testing)
+  - [Run the tests](https://github.com/fgamess/cellular-automaton#run-the-tests)
 
 
 Prerequisites
@@ -32,7 +32,7 @@ Or you can use your own Apache server but:
 
 Install and start the Docker stack.
 
-The docker stack is composed by 2 containers : php7 (latest) and nginx. All the configuration is done.
+The docker stack is composed by only one container : php7.2 with apache. All the configuration is done.
 
 Using Docker CE :
 
