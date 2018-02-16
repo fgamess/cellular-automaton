@@ -6,7 +6,7 @@
  * Time: 15:56
  */
 
-namespace Api\Model;
+namespace Model;
 
 interface CellInterface
 {

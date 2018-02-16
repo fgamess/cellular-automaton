@@ -8,7 +8,7 @@
 
 namespace Util;
 
-use Api\Model\Cell;
+use Model\Cell;
 
 class GridHelper
 {

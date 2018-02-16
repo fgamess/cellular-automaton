@@ -8,7 +8,7 @@
 
 namespace Api;
 
-use Api\Model\Cell;
+use Model\Cell;
 use Util\GridHelper;
 
 

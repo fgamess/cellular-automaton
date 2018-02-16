@@ -6,7 +6,7 @@
  * Time: 15:55
  */
 
-namespace Api\Model;
+namespace Model;
 
 class Cell implements CellInterface, \JsonSerializable
 {
