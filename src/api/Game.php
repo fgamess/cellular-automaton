@@ -117,23 +117,23 @@ class Game
     public function generateGridUsingRules():array
     {
         $cells = &$this->gridHelper->grid;
-        $kill_queue = $born_queue = [];
+        $killQueue = $bornQueue = [];
         for ($y = 0; $y < $this->gridHelper->getHeight(); $y++) {
             for ($x = 0; $x < $this->gridHelper->getWidth(); $x++) {
                 // All cell activity is determined by the neighbor count.
-                $neighbor_count = $this->getAliveNeighborCount($x, $y);
-                if ($cells[$y][$x]['isAlive'] && ($neighbor_count < 2 || $neighbor_count > 3)) {
-                    $kill_queue[] = [$y, $x];
+                $neighborCount = $this->getAliveNeighborCount($x, $y);
+                if ($cells[$y][$x]['isAlive'] && ($neighborCount < 2 || $neighborCount > 3)) {
+                    $killQueue[] = [$y, $x];
                 }
-                if (!$cells[$y][$x]['isAlive'] && $neighbor_count === 3) {
-                    $born_queue[] = [$y, $x];
+                if (!$cells[$y][$x]['isAlive'] && $neighborCount === 3) {
+                    $bornQueue[] = [$y, $x];
                 }
             }
         }
-        foreach ($kill_queue as $c) {
+        foreach ($killQueue as $c) {
             $cells[$c[0]][$c[1]]['isAlive'] = 0;
         }
-        foreach ($born_queue as $c) {
+        foreach ($bornQueue as $c) {
             $cells[$c[0]][$c[1]]['isAlive'] = 1;
         }
 
@@ -150,7 +150,7 @@ class Game
      *   Returns the number of alive neighbors for this cell.
      */
     private function getAliveNeighborCount($x, $y) {
-        $alive_count = 0;
+        $aliveCount = 0;
         for ($y2 = $y - 1; $y2 <= $y + 1; $y2++) {
             if ($y2 < 0 || $y2 >= $this->gridHelper->getHeight()) {
                 // Out of range.
@@ -166,10 +166,10 @@ class Game
                     continue;
                 }
                 if ($this->gridHelper->grid[$y2][$x2]['isAlive']) {
-                    $alive_count += 1;
+                    $aliveCount += 1;
                 }
             }
         }
-        return $alive_count;
+        return $aliveCount;
     }
 }
