@@ -50,15 +50,10 @@ class GameController
         return $response;
     }
 
-    public function gosperGliderGun()
-    {
-        $game = new Game(false, 'glider_gun');
-        $grid = $game->getInitialGrid();
-        $response = new Response(json_encode($grid), 200);
-
-        return $response;
-    }
-
+    /**
+     * @return Response
+     * @throws \Exception
+     */
     public function getNextGeneration()
     {
         $game = new Game();
