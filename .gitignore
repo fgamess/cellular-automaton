@@ -1,5 +1,16 @@
-vendor
-
 .idea
 .bash_history
-.php_history
+
+# Local working artifacts (stories, plans, scratch)
+tmp/
+
+# Node / TypeScript
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.stryker-tmp/
+reports/
+
+# Machine-local config (settings.local.json, .env.local, ...)
+*.local*
