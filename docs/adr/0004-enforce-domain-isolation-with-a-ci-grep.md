@@ -1,8 +1,16 @@
 # ADR-0004: Enforce domain isolation with a CI grep, not an architecture-testing library
 
-- **Status:** Accepted
+- **Status:** Accepted, extended by ADR-0005
 - **Date:** 2026-09-06
-- **Related:** ADR-0001
+- **Related:** ADR-0001, ADR-0005
+
+> **Extended by ADR-0005 (CA-B).** The mechanism this ADR chose is unchanged and still the sole
+> enforcement, but the step is now named `Layer isolation` and runs **two independent per-directory
+> extractions** rather than one pooled over `domain/`. The single `grep -v '^\./'` subtraction below
+> was sufficient while `domain/` was the only layer and its one legal shape was a relative path; it
+> stops being expressible as one prefix once `application/` must permit two shapes. The shell block
+> quoted under Decision is therefore the CA-A form, kept as the record of what was decided here, not
+> as a description of the file today. See ADR-0005 for the allow-list that replaced it.
 
 ## Context
 

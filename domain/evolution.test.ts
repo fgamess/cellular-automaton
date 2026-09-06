@@ -79,6 +79,22 @@ describe('how a generation gives way to the next one', () => {
     expect(board.next(conway()).population).toBe(0);
   });
 
+  it('knows itself extinct when nothing on it is alive', () => {
+    expect(Generation.seed(Topology.unbounded, []).isExtinct).toBe(true);
+  });
+
+  it('knows itself alive while a single cell holds out', () => {
+    expect(seedOf([0, 0]).isExtinct).toBe(false);
+  });
+
+  it('becomes extinct as the last of its cells dies out', () => {
+    const dwindling = seedOf([0, 0], [1, 1], [2, 2]);
+
+    expect(dwindling.isExtinct).toBe(false);
+    expect(dwindling.next(conway()).isExtinct).toBe(false);
+    expect(dwindling.next(conway()).next(conway()).isExtinct).toBe(true);
+  });
+
   it('leaves an empty board empty', () => {
     const board = Generation.seed(Topology.unbounded, []);
 

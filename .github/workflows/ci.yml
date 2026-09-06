@@ -35,20 +35,26 @@ jobs:
       - name: Biome
         run: pnpm lint
 
-      - name: Domain isolation
+      - name: Layer isolation
         run: |
-          specifiers=$(grep -rhoE "(from|import)[[:space:]]+['\"][^'\"]+['\"]|import[[:space:]]*\([[:space:]]*['\"][^'\"]+['\"]" domain --include='*.ts' --exclude='*.test.ts' \
-            | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/")
-          if [ -z "$specifiers" ]; then
-            echo "no module specifier was found, so this step measured nothing" >&2
-            exit 1
-          fi
-          foreign=$(printf '%s\n' "$specifiers" | grep -v '^\./' || true)
-          if [ -n "$foreign" ]; then
-            echo "domain/ reaches outside itself:" >&2
-            printf '%s\n' "$foreign" >&2
-            exit 1
-          fi
+          only_these() {
+            layer="$1"
+            allowed="$2"
+            specifiers=$(grep -rhoE "(from|import)[[:space:]]+['\"][^'\"]+['\"]|import[[:space:]]*\([[:space:]]*['\"][^'\"]+['\"]" "$layer" --include='*.ts' --exclude='*.test.ts' \
+              | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/")
+            if [ -z "$specifiers" ]; then
+              echo "no module specifier was found in $layer/, so this step measured nothing" >&2
+              exit 1
+            fi
+            foreign=$(printf '%s\n' "$specifiers" | grep -vE "$allowed" || true)
+            if [ -n "$foreign" ]; then
+              echo "$layer/ may import only $allowed, and reaches for:" >&2
+              printf '%s\n' "$foreign" >&2
+              exit 1
+            fi
+          }
+          only_these domain '^\./'
+          only_these application '^(\./|\.\./domain/index\.ts$)'
 
       - name: Typecheck
         run: pnpm typecheck

@@ -40,6 +40,10 @@ export class Generation {
     return this.live.size;
   }
 
+  get isExtinct(): boolean {
+    return this.live.size === 0;
+  }
+
   isAlive(cell: Position): boolean {
     const placed = canonical(this.topology, cell);
     return placed !== null && this.live.has(placed.key);

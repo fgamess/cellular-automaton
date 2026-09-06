@@ -11,9 +11,9 @@ instead of smearing into a wall.
 This repository is being rewritten. The 2018 implementation it replaces stays permanently browsable
 under the `v1.0-php` tag.
 
-What is here today is the domain layer and its test suite. **The browser application arrives in a
-later story**, which is why `index.html` is a placeholder and `pnpm dev` currently serves an empty
-page. Until then the development loop is `pnpm test:watch`.
+What is here today is the domain layer, the use cases that drive it, and their test suites. **The
+browser application arrives in a later story**, which is why `index.html` is a placeholder and
+`pnpm dev` currently serves an empty page. Until then the development loop is `pnpm test:watch`.
 
 ## Requirements
 
@@ -48,12 +48,14 @@ Run `pnpm verify` before pushing.
 ## Layout
 
 ```
-domain/          the rules: Position, Topology, Ruleset, Generation, and the surface index.ts offers
+domain/          the rules: Position, Topology, Ruleset, Generation, Pattern, and the surface index.ts offers
+application/     the use cases, and the ports they reach the outside world through
 docs/adr/        the decisions and the measurements behind them
-templates/       pattern data, kept for the pattern-loading story that consumes it next
+patterns/        the patterns the application ships, in the community plaintext `.cells` format
 ```
 
-`domain/` imports nothing outside `domain/`, and CI fails if that ever stops being true.
+`domain/` imports nothing outside `domain/`, `application/` imports nothing outside `domain/` and
+itself, and CI fails if either ever stops being true.
 
 ## Rules
 
