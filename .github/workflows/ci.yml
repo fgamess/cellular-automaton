@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    env:
+      NO_COLOR: '1'
+      FORCE_COLOR: '0'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Biome
+        run: pnpm lint
+
+      - name: Domain isolation
+        run: |
+          specifiers=$(grep -rhoE "(from|import)[[:space:]]+['\"][^'\"]+['\"]|import[[:space:]]*\([[:space:]]*['\"][^'\"]+['\"]" domain --include='*.ts' --exclude='*.test.ts' \
+            | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/")
+          if [ -z "$specifiers" ]; then
+            echo "no module specifier was found, so this step measured nothing" >&2
+            exit 1
+          fi
+          foreign=$(printf '%s\n' "$specifiers" | grep -v '^\./' || true)
+          if [ -n "$foreign" ]; then
+            echo "domain/ reaches outside itself:" >&2
+            printf '%s\n' "$foreign" >&2
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Domain loads under bare Node
+        run: pnpm smoke:domain
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+
+  mutation:
+    name: Mutation testing
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      NO_COLOR: '1'
+      FORCE_COLOR: '0'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Stryker
+        run: pnpm mutation
