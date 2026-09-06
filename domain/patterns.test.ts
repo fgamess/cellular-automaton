@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Generation } from './Generation.ts';
 import { Position } from './Position.ts';
+import { GLIDER } from './patterns.fixture.ts';
 import { Ruleset } from './Ruleset.ts';
 import { Topology } from './Topology.ts';
 
@@ -12,14 +13,6 @@ const at = (...cells: readonly (readonly [number, number])[]): Position[] =>
 const keysOf = (cells: readonly Position[]): string[] => cells.map((cell) => cell.key);
 
 const rowThenColumn = (a: Position, b: Position): number => a.y - b.y || a.x - b.x;
-
-const GLIDER = [
-  [1, 0],
-  [2, 1],
-  [0, 2],
-  [1, 2],
-  [2, 2],
-] as const;
 
 const shifted = (dx: number, dy: number): Position[] =>
   at(...GLIDER.map(([x, y]) => [x + dx, y + dy] as const));

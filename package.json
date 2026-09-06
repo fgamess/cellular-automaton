@@ -22,7 +22,7 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm smoke:domain && pnpm build",
     "preview": "vite preview",
     "check:hexagon": "tsc --noEmit -p tsconfig.domain.json && vitest run domain application",
-    "smoke:domain": "node --experimental-strip-types --input-type=module -e \"import * as domain from './domain/index.ts'; const surface = Object.keys(domain).sort().join(' '); const expected = 'Generation Position Ruleset Topology'; if (surface !== expected) { throw new Error('the domain loaded its surface as [' + surface + '] rather than [' + expected + ']'); }\"",
+    "smoke:domain": "node --experimental-strip-types --input-type=module -e \"import * as domain from './domain/index.ts'; const surface = Object.keys(domain).sort().join(' '); const expected = 'Generation Pattern PatternName Position Ruleset Topology parseCells'; if (surface !== expected) { throw new Error('the domain loaded its surface as [' + surface + '] rather than [' + expected + ']'); }\"",
     "life": "node --experimental-strip-types adapters/cli/life.ts"
   },
   "devDependencies": {
