@@ -11,5 +11,7 @@ export interface GenerationView {
 }
 
 export interface Ticker {
+  // `each` must return before it first calls `fn`: the run cancels itself from inside `fn`,
+  // through the `Cancel` `each` has not handed back yet. ADR-0007.
   each(ms: number, fn: () => void): Cancel;
 }
