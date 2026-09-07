@@ -49,6 +49,8 @@ as a smoke test, so it earns its place twice.
 - pnpm 10
 
 ```bash
+git clone https://github.com/fgamess/cellular-automaton.git
+cd cellular-automaton
 pnpm install
 ```
 
@@ -63,15 +65,56 @@ pnpm dev
 A Gosper glider gun on an unbounded board. The gliders it fires leave the visible area and keep
 going; nothing piles up against an edge, because there is no edge.
 
+The page runs that one pattern and offers no way to change it. It takes no options, and the pattern,
+the board size and the speed are all fixed in `adapters/browser/main.ts`. To watch any of the other
+four patterns, use the terminal delivery below. A pattern selector, a generation counter and speed
+controls are planned, not shipped.
+
 In a terminal:
 
 ```bash
 pnpm life run --pattern glider --topology unbounded --generations 4
 ```
 
-`--pattern` takes the stem of any file under `patterns/` (`glider`, `glider_gun`, `exploder`,
-`tumbler`, `lightweight_spaceship`). `--topology` takes `unbounded`, `bounded:WxH` or
-`toroidal:WxH`, up to 1000 cells on a side. `--generations` takes 1 to 10000.
+`run` is the only command, and there is no `--help`.
+
+| Option | Required | Takes |
+|---|---|---|
+| `--pattern` | yes | the stem of any file under `patterns/`: `glider`, `glider_gun`, `exploder`, `tumbler`, `lightweight_spaceship` |
+| `--generations` | yes | 1 to 10000 |
+| `--topology` | no, defaults to `unbounded` | `unbounded`, `bounded:WxH` or `toroidal:WxH`, up to 1000 cells on a side |
+| `--expect-translation` | no | `dx,dy`, described below |
+
+Each generation prints as a block of `O` for a live cell and `.` for a dead one, oldest first, so a
+run of two generations prints the seed and two more blocks after it:
+
+```bash
+pnpm life run --pattern glider --topology bounded:8x6 --generations 2
+```
+
+```
+........
+...O....
+....O...
+..OOO...
+........
+........
+
+........
+........
+..O.O...
+...OO...
+...O....
+........
+```
+
+The exit code says what happened, so the command composes into a script:
+
+| Code | Meaning |
+|---|---|
+| 0 | the run completed |
+| 1 | `--expect-translation` was given, and the final generation was not the seed shifted by it |
+| 2 | the command was refused: an unknown option, a missing value, or a value out of range |
 
 `--expect-translation dx,dy` turns the same command into an assertion: it exits zero only if the
 last generation is the seed shifted by that offset, and non-zero otherwise. A glider moves one cell
