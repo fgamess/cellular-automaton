@@ -4,13 +4,13 @@
   "testRunner": "vitest",
   "plugins": ["@stryker-mutator/vitest-runner", "@stryker-mutator/typescript-checker"],
   "checkers": ["typescript"],
-  "tsconfigFile": "tsconfig.json",
+  "tsconfigFile": "tsconfig.domain.json",
   "mutate": ["domain/**/*.ts", "!domain/**/*.test.ts", "!domain/**/*.fixture.ts"],
   "reporters": ["html", "clear-text", "progress"],
   "coverageAnalysis": "perTest",
   "thresholds": {
     "high": 100,
     "low": 95,
-    "break": 90
+    "break": 98
   }
 }
