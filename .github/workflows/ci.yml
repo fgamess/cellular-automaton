@@ -37,24 +37,139 @@ jobs:
 
       - name: Layer isolation
         run: |
+          SPECIFIER="(from|import)[[:space:]]+['\"\`][^'\"\`]+['\"\`]|import(\.meta\.glob)?[[:space:]]*\([[:space:]]*['\"\`][^'\"\`]+['\"\`]"
+          uncommented() {
+            awk '
+              { kept = ""; quote = ""
+                for (i = 1; i <= length($0); i++) {
+                  c = substr($0, i, 1)
+                  if (quote != "") {
+                    if (c == "\\") { kept = kept c substr($0, i + 1, 1); i++; continue }
+                    if (c == quote) { quote = "" }
+                  } else if (index("\047\"\140", c) > 0) {
+                    quote = c
+                  } else if (c == "/" && substr($0, i + 1, 1) == "/") {
+                    break
+                  }
+                  kept = kept c
+                }
+                print kept
+              }'
+          }
+          specifiers_of() {
+            layer="$1"
+            scope="$2"
+            if [ "$scope" = tests ]; then
+              lines=$(grep -rh -e '' "$layer" --include='*.test.ts' || true)
+            else
+              lines=$(grep -rh -e '' "$layer" --include='*.ts' --exclude='*.test.ts' || true)
+            fi
+            found=$(printf '%s\n' "$lines" | uncommented | grep -oE "$SPECIFIER" || true)
+            printf '%s\n' "$found" | sed -E "s/.*['\"\`]([^'\"\`]+)['\"\`].*/\1/"
+          }
           only_these() {
             layer="$1"
             allowed="$2"
-            specifiers=$(grep -rhoE "(from|import)[[:space:]]+['\"][^'\"]+['\"]|import[[:space:]]*\([[:space:]]*['\"][^'\"]+['\"]" "$layer" --include='*.ts' --exclude='*.test.ts' \
-              | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/")
+            scope="$3"
+            specifiers=$(specifiers_of "$layer" "$scope")
             if [ -z "$specifiers" ]; then
-              echo "no module specifier was found in $layer/, so this step measured nothing" >&2
+              echo "no module specifier was found in $layer/ ($scope), so this step measured nothing" >&2
               exit 1
             fi
             foreign=$(printf '%s\n' "$specifiers" | grep -vE "$allowed" || true)
             if [ -n "$foreign" ]; then
-              echo "$layer/ may import only $allowed, and reaches for:" >&2
+              echo "$layer/ $scope may import only $allowed, and reaches for:" >&2
               printf '%s\n' "$foreign" >&2
               exit 1
             fi
           }
-          only_these domain '^\./'
-          only_these application '^(\./|\.\./domain/index\.ts$)'
+          only_these_must_say() {
+            layer="$1"
+            allowed="$2"
+            scope="$3"
+            needle="$4"
+            said=$( (only_these "$layer" "$allowed" "$scope") 2>&1 || true )
+            case "$said" in
+              *"$needle"*) return 0 ;;
+            esac
+            echo "the control expected $layer/ to fail saying [$needle], and it said [$said]" >&2
+            exit 1
+          }
+          control=$(mktemp -d)
+          printf '%s\n' \
+            "import { a } from './from-quoted.ts';" \
+            'import { b } from "./from-doubled.ts";' \
+            'import { c } from `./from-templated.ts`;' \
+            "const d = await import('./dynamic-quoted.ts');" \
+            'const e = await import("./dynamic-doubled.ts");' \
+            'const f = await import(`../adapters/dynamic-templated.ts`);' \
+            "const g = import.meta.glob('../../patterns/*.cells');" \
+            '// A `Cancel` is handed back from `each`, and never from "./phantom.ts".' \
+            "import { h } from './trailing-comment.ts'; // not from './phantom.ts'" \
+            "import { i } from 'https://esm.sh/protocol.js'; // not from './phantom.ts'" \
+            "import { j } from '../adapters//doubled-slash.ts';" \
+            "const k = '//not-a-comment'; import { l } from './after-a-slashed-string.ts';" \
+            '/* import { m } from "./read-through-a-block-comment.ts"; */' \
+            > "$control/every-shape.ts"
+          seen=$(specifiers_of "$control" source | tr '\n' ' ')
+          every='./from-quoted.ts ./from-doubled.ts ./from-templated.ts ./dynamic-quoted.ts ./dynamic-doubled.ts ../adapters/dynamic-templated.ts ../../patterns/*.cells ./trailing-comment.ts https://esm.sh/protocol.js ../adapters//doubled-slash.ts ./after-a-slashed-string.ts ./read-through-a-block-comment.ts '
+          if [ "$seen" != "$every" ]; then
+            echo "the extractor sees [$seen] where the shapes it must read give [$every]" >&2
+            exit 1
+          fi
+          rm "$control/every-shape.ts"
+          printf '%s\n' \
+            "import { n } from './admitted.ts';" \
+            "import { o } from '../adapters//slipped-past.ts';" \
+            > "$control/a-doubled-slash.ts"
+          only_these_must_say "$control" '^\./admitted\.ts$' source '../adapters//slipped-past.ts'
+          rm "$control/a-doubled-slash.ts"
+          only_these_must_say "$control" '^never$' source 'so this step measured nothing'
+          rmdir "$control"
+          only_these domain '^\./[A-Za-z]+\.ts$' source
+          only_these domain '^(\./[A-Za-z_.]+\.ts|\.\./patterns/[a-z_]+\.cells\?raw|vitest|fast-check)$' tests
+          only_these application '^(\./[A-Za-z]+\.ts|\.\./domain/index\.ts)$' source
+          only_these application '^(\./[A-Za-z]+\.ts|\.\./domain/index\.ts|vitest)$' tests
+          only_these adapters '^(\./[A-Za-z]+\.ts|\.\./(browser|cli|patterns)/[A-Za-z]+\.ts|\.\./\.\./(domain/index|application/[A-Za-z]+)\.ts|\.\./\.\./patterns/\*\.cells|node:(fs/promises|path|process))$' source
+          only_these adapters '^(\./(browser|cli|patterns)/[A-Za-z]+\.ts|\.\./(domain/index|application/[A-Za-z]+)\.ts|vitest)$' tests
+
+      - name: One place composes a pattern
+        run: |
+          COMPOSER=adapters/patterns/BundledPatternCatalog.ts
+          compositions_in() {
+            find "$@" -type f -name '*.ts' ! -name '*.test.ts' -print0 | sort -z | xargs -0 -r awk '
+              { code = $0
+                gsub(/:\/\//, ":", code)
+                comment = index(code, "//")
+                if (comment > 0) { code = substr(code, 1, comment - 1) }
+                hits = gsub(/Pattern\.of\(/, "", code)
+                while (hits-- > 0) { print FILENAME ":" FNR }
+              }'
+          }
+          control=$(mktemp -d)
+          printf '%s\n' \
+            'export const one = Pattern.of(a); export const two = Pattern.of(b);' \
+            '// and this mention of Pattern.of( is prose, not a composition' \
+            > "$control/twice-and-a-mention.ts"
+          counted=$(compositions_in "$control" | wc -l | tr -d ' ')
+          if [ "$counted" != 2 ]; then
+            echo "the counter reads $counted compositions where two real ones and one commented give 2" >&2
+            exit 1
+          fi
+          rm "$control/twice-and-a-mention.ts"
+          rmdir "$control"
+          composition=$(compositions_in domain application adapters || true)
+          if [ -z "$composition" ]; then
+            echo "nothing composes parseCells with Pattern.of, so this step measured nothing" >&2
+            exit 1
+          fi
+          sites=$(printf '%s\n' "$composition" | wc -l | tr -d ' ')
+          files=$(printf '%s\n' "$composition" | cut -d: -f1 | sort -u)
+          if [ "$sites" != 1 ] || [ "$files" != "$COMPOSER" ]; then
+            echo "only $COMPOSER may compose parseCells with Pattern.of, and these do:" >&2
+            printf '%s\n' "$composition" >&2
+            exit 1
+          fi
 
       - name: Typecheck
         run: pnpm typecheck
@@ -62,8 +177,21 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Domain and application compile without adapters
+        run: pnpm check:hexagon
+
       - name: Domain loads under bare Node
         run: pnpm smoke:domain
+
+      - name: Command line adapter runs under bare Node, both ways
+        run: |
+          pnpm life run --pattern glider --topology unbounded --generations 4 \
+            --expect-translation 1,1 > /dev/null
+          if pnpm life run --pattern glider --topology unbounded --generations 4 \
+            --expect-translation 2,2 > /dev/null 2>&1; then
+            echo "a translation the glider does not make was accepted, so this step measured nothing" >&2
+            exit 1
+          fi
 
       - name: Build
         run: pnpm build
