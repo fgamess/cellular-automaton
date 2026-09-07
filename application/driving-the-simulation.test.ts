@@ -77,6 +77,25 @@ const fakeTicker = (): FakeTicker => {
   return ticker;
 };
 
+type EagerTicker = Ticker & { cancelled: boolean; ticks: number };
+
+const eagerTicker = (mostTicks: number): EagerTicker => {
+  const ticker: EagerTicker = {
+    cancelled: false,
+    ticks: 0,
+    each(_ms, fn): Cancel {
+      for (let tick = 0; tick < mostTicks; tick += 1) {
+        ticker.ticks += 1;
+        fn();
+      }
+      return () => {
+        ticker.cancelled = true;
+      };
+    },
+  };
+  return ticker;
+};
+
 const simulationOf = (overrides: Partial<Simulation> = {}): Simulation => ({
   name: PatternName.of('glider'),
   topology: Topology.unbounded,
@@ -250,5 +269,15 @@ describe('driving the simulation through its use cases', () => {
       ['1,0', '2,1', '0,2', '1,2', '2,2'],
       ['0,1', '2,1', '1,2', '2,2', '1,3'],
     ]);
+  });
+
+  it('a clock that ticks before it hands back its cancel leaves the run unable to stop it', async () => {
+    const ticker = eagerTicker(10);
+    const run = new RunSimulation(catalogOf(glider()), spyView(), ticker);
+
+    await expect(run.execute(simulationOf({ generations: 4 }))).rejects.toThrow();
+
+    expect(ticker.cancelled).toBe(false);
+    expect(ticker.ticks).toBe(4);
   });
 });
